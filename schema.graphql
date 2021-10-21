@@ -1,0 +1,36 @@
+enum LABEL_TYPE {
+  MUTABLE
+  IMMUTABLE
+  XAXIS
+}
+
+type Label {
+  name: String!
+  value: Int! # 0 or 1
+  labelType: LABEL_TYPE!
+  xAxis: Float
+  xAxisLabel: String!
+}
+
+type DataElem {
+  name: String!
+  value: Float
+}
+
+type ChartData {
+  ids: [ID!]
+  legendData: [[Label!]]
+  x: [DataElem!]
+  y: [DataElem!]
+}
+
+
+type Query {
+  GetChartIds: [[ID!]]
+  GetChartData(ids: [ID!]): ChartData
+}
+
+
+type Mutation {
+  UpdateLabel(ids: [ID!], xAxisLabel: String!, name: String!, value: Int!): Label
+}
