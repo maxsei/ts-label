@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/maxsei/ts-label/src/graph/generated"
-	"github.com/maxsei/ts-label/src/graph/model"
+	"github.com/maxsei/ts-label/pkg/graph/generated"
+	"github.com/maxsei/ts-label/pkg/graph/model"
 )
 
 func (r *mutationResolver) UpdateLabel(ctx context.Context, ids []string, xAxisLabel string, name string, value int) (*model.Label, error) {

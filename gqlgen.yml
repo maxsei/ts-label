@@ -1,27 +1,27 @@
-# Where are all the schema files located? globs are supported eg  src/graph/**/*.graphqls
+# Where are all the schema files located? globs are supported eg  pkg/graph/**/*.graphqls
 schema:
-  # - src/graph/*.graphqls
+  # - pkg/graph/*.graphqls
   - schema.graphql
 
 # Where should the generated server code go?
 exec:
-  filename: src/graph/generated/generated.go
+  filename: pkg/graph/generated/generated.go
   package: generated
 
 # Uncomment to enable federation
 # federation:
-#   filename: src/graph/generated/federation.go
+#   filename: pkg/graph/generated/federation.go
 #   package: generated
 
 # Where should any generated models go?
 model:
-  filename: src/graph/model/models_gen.go
+  filename: pkg/graph/model/models_gen.go
   package: model
 
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: src/graph
+  dir: pkg/graph
   package: graph
 
 # Optional: turn on use `gqlgen:"fieldName"` tags in your models
@@ -36,7 +36,7 @@ resolver:
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - "git.eogresources.com/mschulte/ra-tracer-dashboard/src/graph/model"
+  - "git.eogresources.com/mschulte/ra-tracer-dashboard/pkg/graph/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #

@@ -4,8 +4,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
-	"github.com/maxsei/ts-label/src/graph"
-	"github.com/maxsei/ts-label/src/graph/generated"
+	"github.com/maxsei/ts-label/pkg/graph"
+	"github.com/maxsei/ts-label/pkg/graph/generated"
 )
 
 const defaultPort = "8080"
