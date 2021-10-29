@@ -1,36 +1,46 @@
 enum LABEL_TYPE {
   MUTABLE
   IMMUTABLE
-  XAXIS
 }
 
 type Label {
-  name: String!
-  value: Int! # 0 or 1
+  seriesGID: [ID]!
+  name: ID
   labelType: LABEL_TYPE!
-  xAxis: Float
-  xAxisLabel: String!
+  min: Float
+  max: Float
 }
 
-type DataElem {
-  name: String!
-  value: Float
+type Series {
+  seriesGID: [ID]!
+  name: ID
+  values: [Float]
 }
 
-type ChartData {
-  ids: [ID!]
-  legendData: [[Label!]]
-  x: [DataElem!]
-  y: [DataElem!]
+type Chart {
+  seriesGID: [ID]!
+  labels: [Label]
+  x: Series
+  y: [Series]
 }
-
 
 type Query {
-  GetChartIds: [[ID!]]
-  GetChartData(ids: [ID!]): ChartData
+  GetSeriesGIDs: [[ID!]] # Returns all seriesGID's
+  GetChart(seriesGID: [ID]): Chart
 }
 
-
 type Mutation {
-  UpdateLabel(ids: [ID!], xAxisLabel: String!, name: String!, value: Int!): Label
+  # Label CRUD
+  CreateLabel(seriesGID: [ID], name: ID, min: Float, max: Float): Label
+  UpdateLabel(seriesGID: [ID], name: ID, min: Float, max: Float): Label
+  DeleteLabel(seriesGID: [ID], name: ID): [ID] # Returns [*seriesGID, Label.name]
+
+  # Series CRUD Returns [*seriesGID, series.name]
+  CreateSeries(seriesGID: [ID], name: ID, values: [Float]): [ID]
+  UpdateSeries(seriesGID: [ID], nameOld: ID, nameNew: ID): [ID]
+
+  # # SeriesGID CRUD
+  # CreateGID(seriesGID: [ID]) [ID]
+  # CreateGID(seriesGIDNew: [ID], seriesGIDOld: [ID]) [ID]
+  # # DeleteGID(seriesGID: [ID]) [ID]
 }

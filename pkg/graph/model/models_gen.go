@@ -8,24 +8,25 @@ import (
 	"strconv"
 )
 
-type ChartData struct {
-	Ids        []string    `json:"ids"`
-	LegendData [][]*Label  `json:"legendData"`
-	X          []*DataElem `json:"x"`
-	Y          []*DataElem `json:"y"`
-}
-
-type DataElem struct {
-	Name  string   `json:"name"`
-	Value *float64 `json:"value"`
+type Chart struct {
+	SeriesGid []*string `json:"seriesGID"`
+	Labels    []*Label  `json:"labels"`
+	X         *Series   `json:"x"`
+	Y         []*Series `json:"y"`
 }
 
 type Label struct {
-	Name       string    `json:"name"`
-	Value      int       `json:"value"`
-	LabelType  LabelType `json:"labelType"`
-	XAxis      *float64  `json:"xAxis"`
-	XAxisLabel string    `json:"xAxisLabel"`
+	SeriesGid []*string `json:"seriesGID"`
+	Name      *string   `json:"name"`
+	LabelType LabelType `json:"labelType"`
+	Min       *float64  `json:"min"`
+	Max       *float64  `json:"max"`
+}
+
+type Series struct {
+	SeriesGid []*string  `json:"seriesGID"`
+	Name      *string    `json:"name"`
+	Values    []*float64 `json:"values"`
 }
 
 type LabelType string
@@ -33,18 +34,16 @@ type LabelType string
 const (
 	LabelTypeMutable   LabelType = "MUTABLE"
 	LabelTypeImmutable LabelType = "IMMUTABLE"
-	LabelTypeXaxis     LabelType = "XAXIS"
 )
 
 var AllLabelType = []LabelType{
 	LabelTypeMutable,
 	LabelTypeImmutable,
-	LabelTypeXaxis,
 }
 
 func (e LabelType) IsValid() bool {
 	switch e {
-	case LabelTypeMutable, LabelTypeImmutable, LabelTypeXaxis:
+	case LabelTypeMutable, LabelTypeImmutable:
 		return true
 	}
 	return false

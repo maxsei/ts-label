@@ -42,42 +42,51 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	ChartData struct {
-		Ids        func(childComplexity int) int
-		LegendData func(childComplexity int) int
-		X          func(childComplexity int) int
-		Y          func(childComplexity int) int
-	}
-
-	DataElem struct {
-		Name  func(childComplexity int) int
-		Value func(childComplexity int) int
+	Chart struct {
+		Labels    func(childComplexity int) int
+		SeriesGid func(childComplexity int) int
+		X         func(childComplexity int) int
+		Y         func(childComplexity int) int
 	}
 
 	Label struct {
-		LabelType  func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Value      func(childComplexity int) int
-		XAxis      func(childComplexity int) int
-		XAxisLabel func(childComplexity int) int
+		LabelType func(childComplexity int) int
+		Max       func(childComplexity int) int
+		Min       func(childComplexity int) int
+		Name      func(childComplexity int) int
+		SeriesGid func(childComplexity int) int
 	}
 
 	Mutation struct {
-		UpdateLabel func(childComplexity int, ids []string, xAxisLabel string, name string, value int) int
+		CreateLabel  func(childComplexity int, seriesGid []*string, name *string, min *float64, max *float64) int
+		CreateSeries func(childComplexity int, seriesGid []*string, name *string, values []*float64) int
+		DeleteLabel  func(childComplexity int, seriesGid []*string, name *string) int
+		UpdateLabel  func(childComplexity int, seriesGid []*string, name *string, min *float64, max *float64) int
+		UpdateSeries func(childComplexity int, seriesGid []*string, nameOld *string, nameNew *string) int
 	}
 
 	Query struct {
-		GetChartData func(childComplexity int, ids []string) int
-		GetChartIds  func(childComplexity int) int
+		GetChart      func(childComplexity int, seriesGid []*string) int
+		GetSeriesGIDs func(childComplexity int) int
+	}
+
+	Series struct {
+		Name      func(childComplexity int) int
+		SeriesGid func(childComplexity int) int
+		Values    func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	UpdateLabel(ctx context.Context, ids []string, xAxisLabel string, name string, value int) (*model.Label, error)
+	CreateLabel(ctx context.Context, seriesGid []*string, name *string, min *float64, max *float64) (*model.Label, error)
+	UpdateLabel(ctx context.Context, seriesGid []*string, name *string, min *float64, max *float64) (*model.Label, error)
+	DeleteLabel(ctx context.Context, seriesGid []*string, name *string) ([]*string, error)
+	CreateSeries(ctx context.Context, seriesGid []*string, name *string, values []*float64) ([]*string, error)
+	UpdateSeries(ctx context.Context, seriesGid []*string, nameOld *string, nameNew *string) ([]*string, error)
 }
 type QueryResolver interface {
-	GetChartIds(ctx context.Context) ([][]string, error)
-	GetChartData(ctx context.Context, ids []string) (*model.ChartData, error)
+	GetSeriesGIDs(ctx context.Context) ([][]string, error)
+	GetChart(ctx context.Context, seriesGid []*string) (*model.Chart, error)
 }
 
 type executableSchema struct {
@@ -95,47 +104,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "ChartData.ids":
-		if e.complexity.ChartData.Ids == nil {
+	case "Chart.labels":
+		if e.complexity.Chart.Labels == nil {
 			break
 		}
 
-		return e.complexity.ChartData.Ids(childComplexity), true
+		return e.complexity.Chart.Labels(childComplexity), true
 
-	case "ChartData.legendData":
-		if e.complexity.ChartData.LegendData == nil {
+	case "Chart.seriesGID":
+		if e.complexity.Chart.SeriesGid == nil {
 			break
 		}
 
-		return e.complexity.ChartData.LegendData(childComplexity), true
+		return e.complexity.Chart.SeriesGid(childComplexity), true
 
-	case "ChartData.x":
-		if e.complexity.ChartData.X == nil {
+	case "Chart.x":
+		if e.complexity.Chart.X == nil {
 			break
 		}
 
-		return e.complexity.ChartData.X(childComplexity), true
+		return e.complexity.Chart.X(childComplexity), true
 
-	case "ChartData.y":
-		if e.complexity.ChartData.Y == nil {
+	case "Chart.y":
+		if e.complexity.Chart.Y == nil {
 			break
 		}
 
-		return e.complexity.ChartData.Y(childComplexity), true
-
-	case "DataElem.name":
-		if e.complexity.DataElem.Name == nil {
-			break
-		}
-
-		return e.complexity.DataElem.Name(childComplexity), true
-
-	case "DataElem.value":
-		if e.complexity.DataElem.Value == nil {
-			break
-		}
-
-		return e.complexity.DataElem.Value(childComplexity), true
+		return e.complexity.Chart.Y(childComplexity), true
 
 	case "Label.labelType":
 		if e.complexity.Label.LabelType == nil {
@@ -144,6 +139,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Label.LabelType(childComplexity), true
 
+	case "Label.max":
+		if e.complexity.Label.Max == nil {
+			break
+		}
+
+		return e.complexity.Label.Max(childComplexity), true
+
+	case "Label.min":
+		if e.complexity.Label.Min == nil {
+			break
+		}
+
+		return e.complexity.Label.Min(childComplexity), true
+
 	case "Label.name":
 		if e.complexity.Label.Name == nil {
 			break
@@ -151,26 +160,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Label.Name(childComplexity), true
 
-	case "Label.value":
-		if e.complexity.Label.Value == nil {
+	case "Label.seriesGID":
+		if e.complexity.Label.SeriesGid == nil {
 			break
 		}
 
-		return e.complexity.Label.Value(childComplexity), true
+		return e.complexity.Label.SeriesGid(childComplexity), true
 
-	case "Label.xAxis":
-		if e.complexity.Label.XAxis == nil {
+	case "Mutation.CreateLabel":
+		if e.complexity.Mutation.CreateLabel == nil {
 			break
 		}
 
-		return e.complexity.Label.XAxis(childComplexity), true
+		args, err := ec.field_Mutation_CreateLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
 
-	case "Label.xAxisLabel":
-		if e.complexity.Label.XAxisLabel == nil {
+		return e.complexity.Mutation.CreateLabel(childComplexity, args["seriesGID"].([]*string), args["name"].(*string), args["min"].(*float64), args["max"].(*float64)), true
+
+	case "Mutation.CreateSeries":
+		if e.complexity.Mutation.CreateSeries == nil {
 			break
 		}
 
-		return e.complexity.Label.XAxisLabel(childComplexity), true
+		args, err := ec.field_Mutation_CreateSeries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateSeries(childComplexity, args["seriesGID"].([]*string), args["name"].(*string), args["values"].([]*float64)), true
+
+	case "Mutation.DeleteLabel":
+		if e.complexity.Mutation.DeleteLabel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_DeleteLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteLabel(childComplexity, args["seriesGID"].([]*string), args["name"].(*string)), true
 
 	case "Mutation.UpdateLabel":
 		if e.complexity.Mutation.UpdateLabel == nil {
@@ -182,26 +213,59 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateLabel(childComplexity, args["ids"].([]string), args["xAxisLabel"].(string), args["name"].(string), args["value"].(int)), true
+		return e.complexity.Mutation.UpdateLabel(childComplexity, args["seriesGID"].([]*string), args["name"].(*string), args["min"].(*float64), args["max"].(*float64)), true
 
-	case "Query.GetChartData":
-		if e.complexity.Query.GetChartData == nil {
+	case "Mutation.UpdateSeries":
+		if e.complexity.Mutation.UpdateSeries == nil {
 			break
 		}
 
-		args, err := ec.field_Query_GetChartData_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_UpdateSeries_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.GetChartData(childComplexity, args["ids"].([]string)), true
+		return e.complexity.Mutation.UpdateSeries(childComplexity, args["seriesGID"].([]*string), args["nameOld"].(*string), args["nameNew"].(*string)), true
 
-	case "Query.GetChartIds":
-		if e.complexity.Query.GetChartIds == nil {
+	case "Query.GetChart":
+		if e.complexity.Query.GetChart == nil {
 			break
 		}
 
-		return e.complexity.Query.GetChartIds(childComplexity), true
+		args, err := ec.field_Query_GetChart_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetChart(childComplexity, args["seriesGID"].([]*string)), true
+
+	case "Query.GetSeriesGIDs":
+		if e.complexity.Query.GetSeriesGIDs == nil {
+			break
+		}
+
+		return e.complexity.Query.GetSeriesGIDs(childComplexity), true
+
+	case "Series.name":
+		if e.complexity.Series.Name == nil {
+			break
+		}
+
+		return e.complexity.Series.Name(childComplexity), true
+
+	case "Series.seriesGID":
+		if e.complexity.Series.SeriesGid == nil {
+			break
+		}
+
+		return e.complexity.Series.SeriesGid(childComplexity), true
+
+	case "Series.values":
+		if e.complexity.Series.Values == nil {
+			break
+		}
+
+		return e.complexity.Series.Values(childComplexity), true
 
 	}
 	return 0, false
@@ -270,38 +334,48 @@ var sources = []*ast.Source{
 	{Name: "schema.graphql", Input: `enum LABEL_TYPE {
   MUTABLE
   IMMUTABLE
-  XAXIS
 }
 
 type Label {
-  name: String!
-  value: Int! # 0 or 1
+  seriesGID: [ID]!
+  name: ID
   labelType: LABEL_TYPE!
-  xAxis: Float
-  xAxisLabel: String!
+  min: Float
+  max: Float
 }
 
-type DataElem {
-  name: String!
-  value: Float
+type Series {
+  seriesGID: [ID]!
+  name: ID
+  values: [Float]
 }
 
-type ChartData {
-  ids: [ID!]
-  legendData: [[Label!]]
-  x: [DataElem!]
-  y: [DataElem!]
+type Chart {
+  seriesGID: [ID]!
+  labels: [Label]
+  x: Series
+  y: [Series]
 }
-
 
 type Query {
-  GetChartIds: [[ID!]]
-  GetChartData(ids: [ID!]): ChartData
+  GetSeriesGIDs: [[ID!]] # Returns all seriesGID's
+  GetChart(seriesGID: [ID]): Chart
 }
 
-
 type Mutation {
-  UpdateLabel(ids: [ID!], xAxisLabel: String!, name: String!, value: Int!): Label
+  # Label CRUD
+  CreateLabel(seriesGID: [ID], name: ID, min: Float, max: Float): Label
+  UpdateLabel(seriesGID: [ID], name: ID, min: Float, max: Float): Label
+  DeleteLabel(seriesGID: [ID], name: ID): [ID] # Returns [*seriesGID, Label.name]
+
+  # Series CRUD Returns [*seriesGID, series.name]
+  CreateSeries(seriesGID: [ID], name: ID, values: [Float]): [ID]
+  UpdateSeries(seriesGID: [ID], nameOld: ID, nameNew: ID): [ID]
+
+  # # SeriesGID CRUD
+  # CreateGID(seriesGID: [ID]) [ID]
+  # CreateGID(seriesGIDNew: [ID], seriesGIDOld: [ID]) [ID]
+  # # DeleteGID(seriesGID: [ID]) [ID]
 }
 `, BuiltIn: false},
 }
@@ -311,60 +385,192 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_UpdateLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_CreateLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["ids"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
-		arg0, err = ec.unmarshalOID2ᚕstringᚄ(ctx, tmp)
+	var arg0 []*string
+	if tmp, ok := rawArgs["seriesGID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seriesGID"))
+		arg0, err = ec.unmarshalOID2ᚕᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["ids"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["xAxisLabel"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("xAxisLabel"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["xAxisLabel"] = arg1
-	var arg2 string
+	args["seriesGID"] = arg0
+	var arg1 *string
 	if tmp, ok := rawArgs["name"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg2
-	var arg3 int
-	if tmp, ok := rawArgs["value"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
-		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
+	args["name"] = arg1
+	var arg2 *float64
+	if tmp, ok := rawArgs["min"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("min"))
+		arg2, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["value"] = arg3
+	args["min"] = arg2
+	var arg3 *float64
+	if tmp, ok := rawArgs["max"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max"))
+		arg3, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["max"] = arg3
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_GetChartData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_CreateSeries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["ids"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
-		arg0, err = ec.unmarshalOID2ᚕstringᚄ(ctx, tmp)
+	var arg0 []*string
+	if tmp, ok := rawArgs["seriesGID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seriesGID"))
+		arg0, err = ec.unmarshalOID2ᚕᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["ids"] = arg0
+	args["seriesGID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg1
+	var arg2 []*float64
+	if tmp, ok := rawArgs["values"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("values"))
+		arg2, err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["values"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_DeleteLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*string
+	if tmp, ok := rawArgs["seriesGID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seriesGID"))
+		arg0, err = ec.unmarshalOID2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["seriesGID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_UpdateLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*string
+	if tmp, ok := rawArgs["seriesGID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seriesGID"))
+		arg0, err = ec.unmarshalOID2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["seriesGID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg1
+	var arg2 *float64
+	if tmp, ok := rawArgs["min"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("min"))
+		arg2, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["min"] = arg2
+	var arg3 *float64
+	if tmp, ok := rawArgs["max"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max"))
+		arg3, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["max"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_UpdateSeries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*string
+	if tmp, ok := rawArgs["seriesGID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seriesGID"))
+		arg0, err = ec.unmarshalOID2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["seriesGID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["nameOld"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameOld"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nameOld"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["nameNew"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameNew"))
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nameNew"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_GetChart_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*string
+	if tmp, ok := rawArgs["seriesGID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seriesGID"))
+		arg0, err = ec.unmarshalOID2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["seriesGID"] = arg0
 	return args, nil
 }
 
@@ -421,7 +627,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _ChartData_ids(ctx context.Context, field graphql.CollectedField, obj *model.ChartData) (ret graphql.Marshaler) {
+func (ec *executionContext) _Chart_seriesGID(ctx context.Context, field graphql.CollectedField, obj *model.Chart) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -429,7 +635,7 @@ func (ec *executionContext) _ChartData_ids(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "ChartData",
+		Object:     "Chart",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -439,21 +645,24 @@ func (ec *executionContext) _ChartData_ids(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Ids, nil
+		return obj.SeriesGid, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.([]*string)
 	fc.Result = res
-	return ec.marshalOID2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ChartData_legendData(ctx context.Context, field graphql.CollectedField, obj *model.ChartData) (ret graphql.Marshaler) {
+func (ec *executionContext) _Chart_labels(ctx context.Context, field graphql.CollectedField, obj *model.Chart) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -461,7 +670,7 @@ func (ec *executionContext) _ChartData_legendData(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "ChartData",
+		Object:     "Chart",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -471,7 +680,7 @@ func (ec *executionContext) _ChartData_legendData(ctx context.Context, field gra
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.LegendData, nil
+		return obj.Labels, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -480,12 +689,12 @@ func (ec *executionContext) _ChartData_legendData(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([][]*model.Label)
+	res := resTmp.([]*model.Label)
 	fc.Result = res
-	return ec.marshalOLabel2ᚕᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx, field.Selections, res)
+	return ec.marshalOLabel2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ChartData_x(ctx context.Context, field graphql.CollectedField, obj *model.ChartData) (ret graphql.Marshaler) {
+func (ec *executionContext) _Chart_x(ctx context.Context, field graphql.CollectedField, obj *model.Chart) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -493,7 +702,7 @@ func (ec *executionContext) _ChartData_x(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "ChartData",
+		Object:     "Chart",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -512,12 +721,12 @@ func (ec *executionContext) _ChartData_x(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.DataElem)
+	res := resTmp.(*model.Series)
 	fc.Result = res
-	return ec.marshalODataElem2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐDataElemᚄ(ctx, field.Selections, res)
+	return ec.marshalOSeries2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐSeries(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ChartData_y(ctx context.Context, field graphql.CollectedField, obj *model.ChartData) (ret graphql.Marshaler) {
+func (ec *executionContext) _Chart_y(ctx context.Context, field graphql.CollectedField, obj *model.Chart) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -525,7 +734,7 @@ func (ec *executionContext) _ChartData_y(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "ChartData",
+		Object:     "Chart",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -544,12 +753,12 @@ func (ec *executionContext) _ChartData_y(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.DataElem)
+	res := resTmp.([]*model.Series)
 	fc.Result = res
-	return ec.marshalODataElem2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐDataElemᚄ(ctx, field.Selections, res)
+	return ec.marshalOSeries2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐSeries(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DataElem_name(ctx context.Context, field graphql.CollectedField, obj *model.DataElem) (ret graphql.Marshaler) {
+func (ec *executionContext) _Label_seriesGID(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -557,7 +766,7 @@ func (ec *executionContext) _DataElem_name(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "DataElem",
+		Object:     "Label",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -567,7 +776,7 @@ func (ec *executionContext) _DataElem_name(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return obj.SeriesGid, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -579,41 +788,9 @@ func (ec *executionContext) _DataElem_name(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _DataElem_value(ctx context.Context, field graphql.CollectedField, obj *model.DataElem) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "DataElem",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Value, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*float64)
-	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Label_name(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
@@ -641,49 +818,11 @@ func (ec *executionContext) _Label_name(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Label_value(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Label",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Value, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Label_labelType(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
@@ -721,7 +860,7 @@ func (ec *executionContext) _Label_labelType(ctx context.Context, field graphql.
 	return ec.marshalNLABEL_TYPE2githubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabelType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Label_xAxis(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
+func (ec *executionContext) _Label_min(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -739,7 +878,7 @@ func (ec *executionContext) _Label_xAxis(ctx context.Context, field graphql.Coll
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.XAxis, nil
+		return obj.Min, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -753,7 +892,7 @@ func (ec *executionContext) _Label_xAxis(ctx context.Context, field graphql.Coll
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Label_xAxisLabel(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
+func (ec *executionContext) _Label_max(ctx context.Context, field graphql.CollectedField, obj *model.Label) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -771,21 +910,57 @@ func (ec *executionContext) _Label_xAxisLabel(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.XAxisLabel, nil
+		return obj.Max, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*float64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_CreateLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_CreateLabel_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateLabel(rctx, args["seriesGID"].([]*string), args["name"].(*string), args["min"].(*float64), args["max"].(*float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Label)
+	fc.Result = res
+	return ec.marshalOLabel2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_UpdateLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -813,7 +988,7 @@ func (ec *executionContext) _Mutation_UpdateLabel(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateLabel(rctx, args["ids"].([]string), args["xAxisLabel"].(string), args["name"].(string), args["value"].(int))
+		return ec.resolvers.Mutation().UpdateLabel(rctx, args["seriesGID"].([]*string), args["name"].(*string), args["min"].(*float64), args["max"].(*float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -827,7 +1002,124 @@ func (ec *executionContext) _Mutation_UpdateLabel(ctx context.Context, field gra
 	return ec.marshalOLabel2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_GetChartIds(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_DeleteLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_DeleteLabel_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteLabel(rctx, args["seriesGID"].([]*string), args["name"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOID2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_CreateSeries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_CreateSeries_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateSeries(rctx, args["seriesGID"].([]*string), args["name"].(*string), args["values"].([]*float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOID2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_UpdateSeries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_UpdateSeries_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateSeries(rctx, args["seriesGID"].([]*string), args["nameOld"].(*string), args["nameNew"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOID2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_GetSeriesGIDs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -845,7 +1137,7 @@ func (ec *executionContext) _Query_GetChartIds(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetChartIds(rctx)
+		return ec.resolvers.Query().GetSeriesGIDs(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -859,7 +1151,7 @@ func (ec *executionContext) _Query_GetChartIds(ctx context.Context, field graphq
 	return ec.marshalOID2ᚕᚕstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_GetChartData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_GetChart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -876,7 +1168,7 @@ func (ec *executionContext) _Query_GetChartData(ctx context.Context, field graph
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_GetChartData_args(ctx, rawArgs)
+	args, err := ec.field_Query_GetChart_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -884,7 +1176,7 @@ func (ec *executionContext) _Query_GetChartData(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetChartData(rctx, args["ids"].([]string))
+		return ec.resolvers.Query().GetChart(rctx, args["seriesGID"].([]*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -893,9 +1185,9 @@ func (ec *executionContext) _Query_GetChartData(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.ChartData)
+	res := resTmp.(*model.Chart)
 	fc.Result = res
-	return ec.marshalOChartData2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐChartData(ctx, field.Selections, res)
+	return ec.marshalOChart2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐChart(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -967,6 +1259,105 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Series_seriesGID(ctx context.Context, field graphql.CollectedField, obj *model.Series) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Series",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SeriesGid, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalNID2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Series_name(ctx context.Context, field graphql.CollectedField, obj *model.Series) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Series",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Series_values(ctx context.Context, field graphql.CollectedField, obj *model.Series) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Series",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Values, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚕᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2099,54 +2490,28 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** object.gotpl ****************************
 
-var chartDataImplementors = []string{"ChartData"}
+var chartImplementors = []string{"Chart"}
 
-func (ec *executionContext) _ChartData(ctx context.Context, sel ast.SelectionSet, obj *model.ChartData) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, chartDataImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ChartData")
-		case "ids":
-			out.Values[i] = ec._ChartData_ids(ctx, field, obj)
-		case "legendData":
-			out.Values[i] = ec._ChartData_legendData(ctx, field, obj)
-		case "x":
-			out.Values[i] = ec._ChartData_x(ctx, field, obj)
-		case "y":
-			out.Values[i] = ec._ChartData_y(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var dataElemImplementors = []string{"DataElem"}
-
-func (ec *executionContext) _DataElem(ctx context.Context, sel ast.SelectionSet, obj *model.DataElem) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, dataElemImplementors)
+func (ec *executionContext) _Chart(ctx context.Context, sel ast.SelectionSet, obj *model.Chart) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, chartImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("DataElem")
-		case "name":
-			out.Values[i] = ec._DataElem_name(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("Chart")
+		case "seriesGID":
+			out.Values[i] = ec._Chart_seriesGID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "value":
-			out.Values[i] = ec._DataElem_value(ctx, field, obj)
+		case "labels":
+			out.Values[i] = ec._Chart_labels(ctx, field, obj)
+		case "x":
+			out.Values[i] = ec._Chart_x(ctx, field, obj)
+		case "y":
+			out.Values[i] = ec._Chart_y(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2169,28 +2534,22 @@ func (ec *executionContext) _Label(ctx context.Context, sel ast.SelectionSet, ob
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Label")
+		case "seriesGID":
+			out.Values[i] = ec._Label_seriesGID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "name":
 			out.Values[i] = ec._Label_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "value":
-			out.Values[i] = ec._Label_value(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "labelType":
 			out.Values[i] = ec._Label_labelType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "xAxis":
-			out.Values[i] = ec._Label_xAxis(ctx, field, obj)
-		case "xAxisLabel":
-			out.Values[i] = ec._Label_xAxisLabel(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "min":
+			out.Values[i] = ec._Label_min(ctx, field, obj)
+		case "max":
+			out.Values[i] = ec._Label_max(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2217,8 +2576,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "CreateLabel":
+			out.Values[i] = ec._Mutation_CreateLabel(ctx, field)
 		case "UpdateLabel":
 			out.Values[i] = ec._Mutation_UpdateLabel(ctx, field)
+		case "DeleteLabel":
+			out.Values[i] = ec._Mutation_DeleteLabel(ctx, field)
+		case "CreateSeries":
+			out.Values[i] = ec._Mutation_CreateSeries(ctx, field)
+		case "UpdateSeries":
+			out.Values[i] = ec._Mutation_UpdateSeries(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2245,7 +2612,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "GetChartIds":
+		case "GetSeriesGIDs":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2253,10 +2620,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_GetChartIds(ctx, field)
+				res = ec._Query_GetSeriesGIDs(ctx, field)
 				return res
 			})
-		case "GetChartData":
+		case "GetChart":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2264,13 +2631,44 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_GetChartData(ctx, field)
+				res = ec._Query_GetChart(ctx, field)
 				return res
 			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var seriesImplementors = []string{"Series"}
+
+func (ec *executionContext) _Series(ctx context.Context, sel ast.SelectionSet, obj *model.Series) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, seriesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Series")
+		case "seriesGID":
+			out.Values[i] = ec._Series_seriesGID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Series_name(ctx, field, obj)
+		case "values":
+			out.Values[i] = ec._Series_values(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2547,16 +2945,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNDataElem2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐDataElem(ctx context.Context, sel ast.SelectionSet, v *model.DataElem) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DataElem(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2572,19 +2960,34 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
+func (ec *executionContext) unmarshalNID2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
 		}
 	}
-	return res
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOID2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOID2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNLABEL_TYPE2githubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabelType(ctx context.Context, v interface{}) (model.LabelType, error) {
@@ -2595,16 +2998,6 @@ func (ec *executionContext) unmarshalNLABEL_TYPE2githubᚗcomᚋmaxseiᚋtsᚑla
 
 func (ec *executionContext) marshalNLABEL_TYPE2githubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabelType(ctx context.Context, sel ast.SelectionSet, v model.LabelType) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNLabel2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx context.Context, sel ast.SelectionSet, v *model.Label) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Label(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -2903,55 +3296,44 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) marshalOChartData2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐChartData(ctx context.Context, sel ast.SelectionSet, v *model.ChartData) graphql.Marshaler {
+func (ec *executionContext) marshalOChart2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐChart(ctx context.Context, sel ast.SelectionSet, v *model.Chart) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._ChartData(ctx, sel, v)
+	return ec._Chart(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODataElem2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐDataElemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DataElem) graphql.Marshaler {
+func (ec *executionContext) unmarshalOFloat2ᚕᚖfloat64(ctx context.Context, v interface{}) ([]*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*float64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOFloat2ᚖfloat64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOFloat2ᚕᚖfloat64(ctx context.Context, sel ast.SelectionSet, v []*float64) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
 	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDataElem2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐDataElem(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
+		ret[i] = ec.marshalOFloat2ᚖfloat64(ctx, sel, v[i])
 	}
 
 	return ret
@@ -3050,48 +3432,58 @@ func (ec *executionContext) marshalOID2ᚕᚕstring(ctx context.Context, sel ast
 	return ret
 }
 
-func (ec *executionContext) marshalOLabel2ᚕᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx context.Context, sel ast.SelectionSet, v [][]*model.Label) graphql.Marshaler {
+func (ec *executionContext) unmarshalOID2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOID2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
 	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOLabel2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabelᚄ(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
+		ret[i] = ec.marshalOID2ᚖstring(ctx, sel, v[i])
 	}
-	wg.Wait()
 
 	return ret
 }
 
-func (ec *executionContext) marshalOLabel2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabelᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Label) graphql.Marshaler {
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalID(*v)
+}
+
+func (ec *executionContext) marshalOLabel2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx context.Context, sel ast.SelectionSet, v []*model.Label) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3118,7 +3510,7 @@ func (ec *executionContext) marshalOLabel2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlab
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLabel2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx, sel, v[i])
+			ret[i] = ec.marshalOLabel2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐLabel(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3128,12 +3520,6 @@ func (ec *executionContext) marshalOLabel2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlab
 
 	}
 	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
 
 	return ret
 }
@@ -3143,6 +3529,54 @@ func (ec *executionContext) marshalOLabel2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabel�
 		return graphql.Null
 	}
 	return ec._Label(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSeries2ᚕᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐSeries(ctx context.Context, sel ast.SelectionSet, v []*model.Series) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSeries2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐSeries(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOSeries2ᚖgithubᚗcomᚋmaxseiᚋtsᚑlabelᚋpkgᚋgraphᚋmodelᚐSeries(ctx context.Context, sel ast.SelectionSet, v *model.Series) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Series(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
