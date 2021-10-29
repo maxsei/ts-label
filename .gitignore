@@ -1,2 +1,7 @@
-src/graph/generated
-src/graph/model
+pkg/graph/generated
+pkg/graph/model
+
+/node_modules/
+/public/build/
+
+.DS_Store
